@@ -3,11 +3,22 @@ import { WHATSAPP, SOCIAL } from "@/lib/constants";
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-cream">
-      {/* Subtle decorative background blobs */}
-      <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #D8B4A0 0%, transparent 70%)" }} />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full opacity-15" style={{ background: "radial-gradient(circle, #4a5d23 0%, transparent 70%)" }} />
+    <section className="relative overflow-hidden">
+      {/* Background Video */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 h-full w-full object-cover"
+      >
+        <source src="/videos/hero-video.mp4" type="video/mp4" />
+      </video>
 
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-charcoal/55" />
+
+      {/* Content */}
       <div className="relative mx-auto max-w-5xl px-6 py-24 lg:px-8 lg:py-36">
         <div className="mx-auto max-w-3xl text-center">
 
@@ -18,7 +29,7 @@ export default function HeroSection() {
 
           {/* Headline */}
           <h1
-            className="font-heading text-5xl font-light leading-[1.1] tracking-tight text-olive sm:text-6xl lg:text-7xl"
+            className="font-heading text-5xl font-light leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-7xl"
             style={{ fontFamily: "var(--font-cormorant), serif" }}
           >
             Ethnic Wears to{" "}
@@ -35,7 +46,7 @@ export default function HeroSection() {
           </div>
 
           {/* Subheading */}
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-charcoal/60 sm:text-lg">
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
             Discover elegant kurtas and kurti sets crafted for the modern Indian woman — where tradition meets effortless style.
           </p>
 
@@ -43,7 +54,7 @@ export default function HeroSection() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/products"
-              className="group relative overflow-hidden rounded-full bg-olive px-9 py-3.5 text-sm tracking-widest uppercase font-medium text-white transition-all hover:shadow-lg hover:shadow-olive/20"
+              className="group relative overflow-hidden rounded-full bg-olive px-9 py-3.5 text-sm tracking-widest uppercase font-medium text-white transition-all hover:shadow-lg hover:shadow-olive/30"
             >
               <span className="relative z-10">Explore Collection</span>
               <div className="absolute inset-0 -translate-x-full bg-olive-light transition-transform duration-300 group-hover:translate-x-0" />
@@ -59,13 +70,13 @@ export default function HeroSection() {
           </div>
 
           {/* Social proof */}
-          <p className="mt-10 text-xs tracking-widest text-charcoal/40 uppercase">
+          <p className="mt-10 text-xs tracking-widest text-white/40 uppercase">
             Follow us on{" "}
             <a
               href={SOCIAL.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-olive"
+              className="transition-colors hover:text-white"
               style={{ color: "#D8B4A0" }}
             >
               {SOCIAL.instagram}
@@ -75,7 +86,7 @@ export default function HeroSection() {
       </div>
 
       {/* Bottom accent line */}
-      <div className="h-px bg-gradient-to-r from-transparent via-rose-gold to-transparent opacity-40" />
+      <div className="relative h-px bg-gradient-to-r from-transparent via-rose-gold to-transparent opacity-40" />
     </section>
   );
 }
