@@ -11,14 +11,14 @@ interface Testimonial {
 }
 
 const testimonials: Testimonial[] = [
-  { id: 1, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/images/reviews/1.jpeg" },
-  { id: 2, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/images/reviews/2.jpeg" },
-  { id: 3, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/images/reviews/3.jpeg" },
-  { id: 4, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/images/reviews/4.jpeg" },
-  { id: 5, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/images/reviews/5.jpeg" },
-  { id: 6, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/images/reviews/6.jpeg" },
-  { id: 7, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/images/reviews/7.jpeg" },
-  { id: 8, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/images/reviews/8.jpeg" },
+  { id: 1, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/Images/Reviews/1.jpeg" },
+  { id: 2, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/Images/Reviews/2.jpeg" },
+  { id: 3, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/Images/Reviews/3.jpeg" },
+  { id: 4, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/Images/Reviews/4.jpeg" },
+  { id: 5, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/Images/Reviews/5.jpeg" },
+  { id: 6, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/Images/Reviews/6.jpeg" },
+  { id: 7, name: "Customer", review: "", rating: 5, source: "WhatsApp",  screenshotImage: "/Images/Reviews/7.jpeg" },
+  { id: 8, name: "Customer", review: "", rating: 5, source: "Instagram", screenshotImage: "/Images/Reviews/8.jpeg" },
 ];
 
 function Stars({ count }: { count: number }) {
