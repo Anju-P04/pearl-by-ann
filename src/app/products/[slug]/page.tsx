@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "@/lib/data/products";
+import { getProductBySlug } from "@/lib/firestore";
 import { WHATSAPP } from "@/lib/constants";
 import SizeSelector from "./SizeSelector";
 import ImageGallery from "./ImageGallery";
@@ -11,7 +11,7 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
@@ -36,9 +36,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           {/* Left Column — Image Gallery */}
           <ImageGallery
-            images={product.images}
+           images={product.images}
             productName={product.name}
-            badge={product.badge}
+            badge={product.featured ? "bestseller" : undefined}
           />
 
           {/* Right Column — Product Info */}
@@ -56,46 +56,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Price */}
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-bold text-olive">₹{product.price}</span>
-              {product.originalPrice && (
-                <>
-                  <span className="text-xl text-gray-400 line-through">
-                    ₹{product.originalPrice}
-                  </span>
-                  <span className="rounded-full bg-red-50 px-3 py-0.5 text-xs font-medium text-red-500">
-                    {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
-                  </span>
-                </>
-              )}
             </div>
 
             {/* Divider */}
             <div className="h-px bg-cream" />
 
-            {/* Description */}
+            {/* Fabric & Color */}
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-600">
-                Description
+                Details
               </h2>
               <p className="text-sm leading-relaxed text-gray-500">
-                {product.description}
+                {product.fabric} · {product.color}
               </p>
-            </div>
-
-            {/* Colors */}
-            <div>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-600">
-                Available Colors
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((color) => (
-                  <span
-                    key={color}
-                    className="rounded-full border border-cream bg-white px-3 py-1 text-xs font-medium text-gray-600"
-                  >
-                    {color}
-                  </span>
-                ))}
-              </div>
             </div>
 
             {/* Sizes — Interactive Selector */}

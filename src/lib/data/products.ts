@@ -8,13 +8,12 @@ export interface Product {
   name: string;
   category: ProductCategory;
   price: number;
-  originalPrice?: number;
-  description: string;
+  fabric: string;
+  color: string;
   sizes: ProductSize[];
-  colors: string[];
   images: string[];
-  badge?: "new" | "bestseller";
-  isAvailable: boolean;
+  featured: boolean;
+  stock: number;
 }
 
 const products: Product[] = [

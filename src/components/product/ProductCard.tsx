@@ -29,10 +29,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
 
-          {/* Badge */}
-          {product.badge && (
+          {/* Featured Badge */}
+          {product.featured && (
             <div className="absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-xs font-medium uppercase tracking-wider text-white">
-              {product.badge === "bestseller" ? "Best Seller" : "New"}
+              Featured
             </div>
           )}
 
@@ -53,15 +53,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-olive">₹{product.price}</span>
-          {product.originalPrice && (
-            <span className="text-sm text-gray-400 line-through">
-              ₹{product.originalPrice}
-            </span>
-          )}
         </div>
 
         <p className="text-xs leading-relaxed text-gray-500 line-clamp-2">
-          {product.description}
+          {product.fabric} · {product.color}
         </p>
 
         <div className="mt-auto pt-2">

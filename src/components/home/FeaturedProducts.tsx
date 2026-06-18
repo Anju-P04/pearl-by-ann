@@ -1,9 +1,9 @@
-import { getFeaturedProducts } from "@/lib/data/products";
+import { getFeaturedProducts } from "@/lib/firestore";
 import ProductCard from "@/components/product/ProductCard";
 import Link from "next/link";
 
-export default function FeaturedProducts() {
-  const products = getFeaturedProducts().slice(0, 4);
+export default async function FeaturedProducts() {
+  const products = (await getFeaturedProducts()).slice(0, 4);
 
   return (
     <section className="bg-warm-white py-16 sm:py-20">
