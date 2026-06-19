@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { WHATSAPP } from "@/lib/constants";
 import type { Product } from "@/lib/data/products";
-import { isProductAvailable, getTotalStock } from "@/lib/data/products";
+import { formatCategoryLabel, isProductAvailable, getTotalStock } from "@/lib/data/products";
 
 interface ProductCardProps {
   product: Product;
@@ -63,7 +63,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Category tag */}
           <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-olive backdrop-blur">
-            {product.category === "kurta" ? "Kurti" : "Kurti Set"}
+            {formatCategoryLabel(product.category)}
           </div>
         </div>
       </Link>

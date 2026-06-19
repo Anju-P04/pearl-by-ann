@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/firestore";
+import { formatCategoryLabel } from "@/lib/data/products";
 import SizeSelector from "./SizeSelector";
 import ImageGallery from "./ImageGallery";
 
@@ -42,7 +43,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="flex flex-col gap-6">
             {/* Category */}
             <span className="inline-block rounded-full bg-cream px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-olive">
-              {product.category === "kurta" ? "Kurti" : "Kurti Set"}
+              {formatCategoryLabel(product.category)}
             </span>
 
             {/* Name */}

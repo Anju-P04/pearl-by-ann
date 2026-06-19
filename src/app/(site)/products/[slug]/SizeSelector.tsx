@@ -22,11 +22,7 @@ export default function SizeSelector({
   productPrice,
   sizeStock,
 }: SizeSelectorProps) {
-  // Fixed display order: S, M, L, XL, XXL — use shared PRODUCT_SIZES to avoid hardcoding unsupported sizes
-  const DISPLAY_ORDER = ["S", "M", "L", "XL", "XXL"] as const;
-  const sizes = DISPLAY_ORDER.filter((s) =>
-    PRODUCT_SIZES.includes(s as typeof PRODUCT_SIZES[number])
-  ) as typeof PRODUCT_SIZES[number][];
+  const sizes = PRODUCT_SIZES;
   const [selectedSize, setSelectedSize] = useState("");
 
   const selectedQty = selectedSize ? getSizeStock({ sizeStock } as never, selectedSize) : -1;

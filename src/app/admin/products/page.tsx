@@ -11,7 +11,7 @@ import {
   adminDeleteProduct,
 } from "@/lib/admin/firestore";
 import type { Product } from "@/lib/data/products";
-import { getTotalStock, isProductAvailable } from "@/lib/data/products";
+import { formatCategoryLabel, getTotalStock, isProductAvailable } from "@/lib/data/products";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -144,7 +144,7 @@ export default function AdminProductsPage() {
                           </div>
                         </td>
                         <td className="px-5 py-4 text-gray-600">
-                          {p.category === "kurta" ? "Kurti" : "Kurti Set"}
+                          {formatCategoryLabel(p.category)}
                         </td>
                         <td className="px-5 py-4 font-medium text-olive">
                           ₹{p.price}
