@@ -1,4 +1,6 @@
 
+export const dynamic = 'force-dynamic';
+
 import { getProductsGroupedByCategory } from "@/lib/firestore";
 import ProductCard from "@/components/product/ProductCard";
 

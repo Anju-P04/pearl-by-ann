@@ -11,7 +11,7 @@ import {
   adminDeleteProduct,
 } from "@/lib/admin/firestore";
 import type { Product } from "@/lib/data/products";
-import { formatCategoryLabel, getTotalStock, isProductAvailable } from "@/lib/data/products";
+import { formatCategoryLabel, getTotalStock, isProductAvailable, PRODUCT_CATEGORIES } from "@/lib/data/products";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -83,8 +83,11 @@ export default function AdminProductsPage() {
               className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-olive focus:outline-none focus:ring-1 focus:ring-olive"
             >
               <option value="all">All Categories</option>
-              <option value="kurta">Kurti</option>
-              <option value="kurti-set">Kurti Set</option>
+              {PRODUCT_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
             </select>
           </div>
 

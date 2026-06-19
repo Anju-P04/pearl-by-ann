@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getFeaturedProducts } from "@/lib/firestore";
 import ProductCard from "@/components/product/ProductCard";
 import Link from "next/link";
