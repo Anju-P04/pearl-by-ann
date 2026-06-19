@@ -25,6 +25,7 @@ export default function ImageGallery({
       {/* Main Image */}
       <div
         onClick={nextImage}
+        onTouchEnd={nextImage}
         className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-cream cursor-pointer"
       >
         <Image
@@ -55,6 +56,7 @@ export default function ImageGallery({
         <div className="flex gap-2">
           {images.map((src, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => setActive(i)}
               className={`relative aspect-square w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${

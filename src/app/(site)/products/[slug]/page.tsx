@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/firestore";
-import { WHATSAPP } from "@/lib/constants";
 import SizeSelector from "./SizeSelector";
 import ImageGallery from "./ImageGallery";
 
@@ -13,9 +12,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   return (
     <div className="bg-warm-white min-h-screen">
@@ -34,14 +31,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </nav>
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-          {/* Left Column — Image Gallery */}
+          {/* Left — Image Gallery */}
           <ImageGallery
-           images={product.images}
+            images={product.images}
             productName={product.name}
             badge={product.featured ? "bestseller" : undefined}
           />
 
-          {/* Right Column — Product Info */}
+          {/* Right — Product Info */}
           <div className="flex flex-col gap-6">
             {/* Category */}
             <span className="inline-block rounded-full bg-cream px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-olive">
@@ -49,19 +46,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </span>
 
             {/* Name */}
-            <h1 className="text-3xl font-bold text-charcoal sm:text-4xl font-heading">
+            <h1 className="font-heading text-3xl font-bold text-charcoal sm:text-4xl">
               {product.name}
             </h1>
 
             {/* Price */}
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-olive">₹{product.price}</span>
-            </div>
+            <span className="text-3xl font-bold text-olive">₹{product.price}</span>
 
-            {/* Divider */}
             <div className="h-px bg-cream" />
 
-            {/* Fabric & Color */}
+            {/* Details */}
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-600">
                 Details
@@ -71,12 +65,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </p>
             </div>
 
-            {/* Sizes — Interactive Selector */}
+            {/* Size selector */}
             <SizeSelector
               productName={product.name}
               productPrice={product.price}
-              sizes={product.sizes}
-              slug={product.slug}
+              sizeStock={product.sizeStock}
             />
           </div>
         </div>

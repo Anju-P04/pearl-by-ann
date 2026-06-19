@@ -38,4 +38,12 @@ body {
   h6 {
     font-family: "Playfair Display", serif;
   }
+
+  .input {
+    @apply w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-charcoal focus:border-olive focus:outline-none focus:ring-1 focus:ring-olive;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500;
+  }
 }

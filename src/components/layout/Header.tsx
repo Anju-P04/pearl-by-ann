@@ -61,9 +61,12 @@ export default function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          onClick={() => setMobileOpen(!mobileOpen)}
+          type="button"
+          onClick={() => setMobileOpen((prev) => !prev)}
           className="md:hidden flex flex-col gap-1.5 p-2"
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
         >
           <span className={`block h-px w-6 bg-charcoal transition-all duration-300 ${mobileOpen ? "translate-y-2 rotate-45" : ""}`} />
           <span className={`block h-px w-6 bg-charcoal transition-all duration-300 ${mobileOpen ? "opacity-0" : ""}`} />
@@ -72,7 +75,7 @@ export default function Header() {
       </div>
 
       {/* Mobile Drawer */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${mobileOpen ? "max-h-96" : "max-h-0"}`}>
+      <div id="mobile-menu" className={`md:hidden overflow-hidden transition-all duration-300 ${mobileOpen ? "max-h-screen" : "max-h-0"}`}>
         <div className="border-t border-cream bg-white px-6 py-6 space-y-1">
           {NAV_LINKS.map((link) => (
             <Link

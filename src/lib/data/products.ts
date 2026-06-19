@@ -1,6 +1,21 @@
-export type ProductCategory = "kurta" | "kurti-set";
+export type ProductCategory = "kurta" | "kurti-set" | "short-kurta";
+
+export const PRODUCT_CATEGORIES = [
+  { value: "kurta", label: "Kurti" },
+  { value: "kurti-set", label: "Kurti Set" },
+  { value: "short-kurta", label: "Short Kurta" },
+] as const;
 
 export type ProductSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+
+export const PRODUCT_SIZES = ["XS", "S", "M", "L", "XL", "XXL"] as const;
+
+// Map of size -> quantity in stock
+export type SizeStock = {
+  [size: string]: number;
+};
+
+export const PRODUCT_COLLECTION = "Products" as const;
 
 export interface Product {
   id: string;
@@ -10,127 +25,85 @@ export interface Product {
   price: number;
   fabric: string;
   color: string;
-  sizes: ProductSize[];
+  sizeStock: SizeStock;
   images: string[];
   featured: boolean;
-  stock: number;
+  newArrival?: boolean;
 }
 
-const products: Product[] = [
-  {
-    id: "1",
-    slug: "thread-worked-brocade-kurti",
-    name: "Thread Worked Brocade Kurti",
-    category: "kurta",
-    price: 699,
-    description:
-      "Elegant brocade kurti with intricate thread work detailing. The rich purple tone and fine craftsmanship make it a perfect festive pick.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Purple"],
-    images: [
-      "/Images/Products/brocade-kurti/1.jpeg",
-      "/Images/Products/brocade-kurti/2.jpeg",
-      "/Images/Products/brocade-kurti/3.jpeg",
-    ],
-    badge: "bestseller",
-    isAvailable: true,
-  },
-  {
-    id: "2",
-    slug: "a-line-kurti",
-    name: "A Line Kurti",
-    category: "kurta",
-    price: 850,
-    description:
-      "Graceful A-line silhouette in airy Mul Chanderi fabric. Blue with white tones make this a versatile everyday and occasion wear.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Blue with White"],
-    images: [
-      "/Images/Products/a-line-kurti/1.jpeg",
-      "/Images/Products/a-line-kurti/2.jpeg",
-    ],
-    isAvailable: true,
-  },
-  {
-    id: "3",
-    slug: "flattering-flared-fit-kurti",
-    name: "Flattering Flared Fit Kurti",
-    category: "kurta",
-    price: 799,
-    description:
-      "Flowy flared fit kurti crafted in Crushed Chiffon for a lightweight, breezy feel. Drapes beautifully and flatters all body types.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Multicolor"],
-    images: [
-      "/Images/Products/flarred-kurti/1.jpeg",
-      "/Images/Products/flarred-kurti/2.jpeg",
-    ],
-    isAvailable: true,
-  },
-  {
-    id: "4",
-    slug: "pleated-kurti",
-    name: "Pleated Kurti",
-    category: "kurta",
-    price: 859,
-    description:
-      "Soft Mul Chanderi pleated kurti in a delightful butter yellow. The pleated front adds structure and movement to a classic silhouette.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Butter Yellow"],
-    images: [
-      "/Images/Products/crushed-kurti/1.jpeg",
-      "/Images/Products/crushed-kurti/2.jpeg",
-    ],
-    badge: "new",
-    isAvailable: true,
-  },
-  {
-    id: "5",
-    slug: "office-wear-3-piece-kurti-set",
-    name: "Office Wear 3 Piece Kurti Set",
-    category: "kurti-set",
-    price: 1199,
-    description:
-      "A polished 3-piece cotton kurti set designed for the modern workplace. Breathable, structured, and effortlessly put-together.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Multicolor"],
-    images: [
-      "/Images/Products/ofz-kurti/1.jpeg",
-    ],
-    badge: "new",
-    isAvailable: true,
-  },
-  {
-    id: "6",
-    slug: "3-piece-kurti-set",
-    name: "3 Piece Kurti Set",
-    category: "kurti-set",
-    price: 1259,
-    description:
-      "Complete 3-piece cotton kurti set — kurti, dupatta, and bottom. A coordinated look that takes you from casual outings to festive gatherings.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Multicolor"],
-    images: [
-      "/Images/Products/three-piece/1.jpeg",
-      "/Images/Products/three-piece/2.jpeg",
-    ],
-    badge: "new",
-    isAvailable: true,
-  },
-];
-
-export function getAllProducts(): Product[] {
-  return products;
+export function formatCategoryLabel(category: ProductCategory): string {
+  return PRODUCT_CATEGORIES.find((item) => item.value === category)?.label ?? category;
 }
 
-export function getFeaturedProducts(): Product[] {
-  return products.filter((p) => p.badge === "bestseller" || p.badge === "new");
+function isProductCategory(value: unknown): value is ProductCategory {
+  return (
+    value === "kurta" ||
+    value === "kurti-set" ||
+    value === "short-kurta"
+  );
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug);
+export function mapProductDoc(
+  id: string,
+  data: Record<string, unknown>
+): Product {
+  const imagesField = data.images ?? data.image;
+  const images = Array.isArray(imagesField)
+    ? (imagesField as unknown[])
+        .filter((item) => typeof item === "string")
+        .map((item) => item as string)
+    : typeof imagesField === "string"
+    ? [imagesField]
+    : [];
+
+  return {
+    id,
+    slug: typeof data.slug === "string" ? data.slug.trim() : "",
+    name: typeof data.name === "string" ? data.name : "",
+    category: isProductCategory(data.category) ? data.category : "kurta",
+    price: Number(data.price ?? 0),
+    fabric: typeof data.fabric === "string" ? data.fabric : "",
+    color: typeof data.color === "string" ? data.color : "",
+    sizeStock:
+      typeof data.sizeStock === "object" && data.sizeStock !== null
+        ? (data.sizeStock as SizeStock)
+        : {},
+    images,
+    featured: Boolean(data.featured),
+    newArrival: Boolean(data.newArrival),
+  };
 }
 
-export function getProductsByCategory(category: ProductCategory): Product[] {
-  return products.filter((p) => p.category === category);
+// ---------------------------------------------------------------------------
+// Helper functions — used by UI now, ready for Razorpay / admin later
+// ---------------------------------------------------------------------------
+
+/** Returns stock count for a specific size. */
+export function getSizeStock(product: Product, size: string): number {
+  return product.sizeStock?.[size] ?? 0;
+}
+
+/** Returns all sizes that have stock > 0. */
+export function getAvailableSizes(product: Product): string[] {
+  return Object.entries(product.sizeStock ?? {})
+    .filter(([, qty]) => qty > 0)
+    .map(([size]) => size);
+}
+
+/** Returns true if a specific size has stock > 0. */
+export function isSizeAvailable(product: Product, size: string): boolean {
+  return getSizeStock(product, size) > 0;
+}
+
+/** Returns total stock across all sizes. */
+export function getTotalStock(product: Product): number {
+  return Object.values(product.sizeStock ?? {}).reduce(
+    (sum, qty) => sum + qty,
+    0
+  );
+}
+
+/** Returns true if at least one size is in stock. */
+export function isProductAvailable(product: Product): boolean {
+  return getTotalStock(product) > 0;
 }
