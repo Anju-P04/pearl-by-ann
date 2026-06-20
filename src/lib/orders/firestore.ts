@@ -16,6 +16,10 @@ export type OrderStatus =
   | "Delivered"
   | "Cancelled";
 
+export type PaymentMethod = "COD" | "ONLINE";
+
+export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
+
 export interface OrderItem {
   size: string;
   quantity: number;
@@ -36,11 +40,14 @@ export interface Order {
   unitPrice: number;
   totalPrice: number;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   createdAt: string;
 }
 
-export type CreateOrderData = Omit<Order, "id" | "status" | "createdAt"> & {
+export type CreateOrderData = Omit<Order, "id" | "status" | "paymentStatus" | "createdAt"> & {
   status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
 };
 
 function isOrderStatus(value: unknown): value is OrderStatus {
@@ -100,6 +107,8 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
     unitPrice: Number(data.unitPrice ?? 0),
     totalPrice: Number(data.totalPrice ?? totalItems * Number(data.unitPrice ?? 0)),
     status: isOrderStatus(data.status) ? data.status : "Pending",
+    paymentMethod: (data.paymentMethod === "COD" || data.paymentMethod === "ONLINE") ? data.paymentMethod as PaymentMethod : "COD",
+    paymentStatus: (data.paymentStatus === "Pending" || data.paymentStatus === "Paid" || data.paymentStatus === "Failed" || data.paymentStatus === "Refunded") ? data.paymentStatus as PaymentStatus : "Pending",
     createdAt: typeof data.createdAt === "string" ? data.createdAt : new Date().toISOString(),
   };
 }
@@ -115,6 +124,7 @@ export async function createOrder(data: CreateOrderData): Promise<string> {
     totalItems,
     totalPrice,
     status: data.status ?? "Pending",
+    paymentStatus: data.paymentStatus ?? "Pending",
     createdAt: new Date().toISOString(),
   };
 

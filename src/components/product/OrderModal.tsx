@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { createOrder, type OrderItem } from "@/lib/orders/firestore";
+import { createOrder, type OrderItem, type PaymentMethod } from "@/lib/orders/firestore";
 
 interface OrderModalProps {
   productId: string;
@@ -33,10 +33,11 @@ export default function OrderModal({
 }: OrderModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; submit?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; payment?: string; submit?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,6 +51,10 @@ export default function OrderModal({
       nextErrors.phone = "Phone number is required.";
     } else if (!isValidIndianPhone(customerPhone.trim())) {
       nextErrors.phone = "Enter a valid 10-digit Indian mobile number.";
+    }
+
+    if (!paymentMethod) {
+      nextErrors.payment = "Please select a payment method.";
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -72,6 +77,7 @@ export default function OrderModal({
         totalItems,
         unitPrice,
         totalPrice,
+        paymentMethod: paymentMethod as PaymentMethod,
       });
 
       setOrderId(id);
@@ -127,6 +133,35 @@ export default function OrderModal({
             </div>
             <p className="mt-3">Total: {totalItems} items</p>
             <p className="font-semibold">Total price: ₹{totalPrice}</p>
+          </div>
+
+          <div className="rounded-2xl bg-gray-50 p-4">
+            <p className="text-sm font-medium text-gray-800">Payment Method</p>
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="COD"
+                  checked={paymentMethod === "COD"}
+                  onChange={() => setPaymentMethod("COD")}
+                  className="accent-olive"
+                />
+                <span className="text-sm text-gray-700">Cash on Delivery</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="ONLINE"
+                  checked={paymentMethod === "ONLINE"}
+                  onChange={() => setPaymentMethod("ONLINE")}
+                  className="accent-olive"
+                />
+                <span className="text-sm text-gray-700">Pay Online</span>
+              </label>
+            </div>
+            {errors.payment && <p className="mt-2 text-xs text-red-600">{errors.payment}</p>}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

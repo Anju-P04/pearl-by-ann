@@ -7,7 +7,7 @@ import {
   adminGetAllOrders,
   adminUpdateOrderStatus,
 } from "@/lib/admin/firestore";
-import type { Order, OrderStatus } from "@/lib/orders/firestore";
+import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/orders/firestore";
 import StatusChangeConfirmationModal from "@/components/admin/StatusChangeConfirmationModal";
 import {
   getValidNextStatuses,
@@ -87,6 +87,8 @@ interface OrderAnalytics {
   ordersToday: number;
   ordersThisMonth: number;
   recentOrders: Order[];
+  codOrders: number;
+  onlineOrders: number;
 }
 
 function computeAnalytics(orders: Order[]): OrderAnalytics {
@@ -102,6 +104,8 @@ function computeAnalytics(orders: Order[]): OrderAnalytics {
   let deliveredRevenue = 0;
   let ordersToday = 0;
   let ordersThisMonth = 0;
+  let codOrders = 0;
+  let onlineOrders = 0;
 
   orders.forEach((order) => {
     statusCounts[order.status]++;
@@ -121,6 +125,12 @@ function computeAnalytics(orders: Order[]): OrderAnalytics {
     if (isThisMonth(order.createdAt)) {
       ordersThisMonth++;
     }
+
+    if (order.paymentMethod === "COD") {
+      codOrders++;
+    } else if (order.paymentMethod === "ONLINE") {
+      onlineOrders++;
+    }
   });
 
   const recentOrders = [...orders]
@@ -135,6 +145,8 @@ function computeAnalytics(orders: Order[]): OrderAnalytics {
     ordersToday,
     ordersThisMonth,
     recentOrders,
+    codOrders,
+    onlineOrders,
   };
 }
 
@@ -321,6 +333,18 @@ export default function AdminOrdersPage() {
                 <p className="text-2xl font-bold text-gray-800">{analytics.ordersThisMonth}</p>
                 <p className="text-xs text-gray-400">Current month</p>
               </div>
+
+              <div className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">COD Orders</p>
+                <p className="text-2xl font-bold text-gray-800">{analytics.codOrders}</p>
+                <p className="text-xs text-gray-400">Cash on Delivery</p>
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">Online Orders</p>
+                <p className="text-2xl font-bold text-gray-800">{analytics.onlineOrders}</p>
+                <p className="text-xs text-gray-400">Pay Online</p>
+              </div>
             </div>
           )}
 
@@ -394,6 +418,7 @@ export default function AdminOrdersPage() {
                         <th className="px-5 py-3">Items</th>
                         <th className="px-5 py-3">Total</th>
                         <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3">Payment</th>
                         <th className="px-5 py-3">Created</th>
                         <th className="px-5 py-3 text-right">Actions</th>
                       </tr>
@@ -434,6 +459,28 @@ export default function AdminOrdersPage() {
                                 ))}
                               </select>
                             )}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                order.paymentMethod === "COD"
+                                  ? "bg-gray-50 text-gray-600 border-gray-200"
+                                  : "bg-purple-50 text-purple-700 border-purple-100"
+                              }`}>
+                                {order.paymentMethod}
+                              </span>
+                              <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                order.paymentStatus === "Paid"
+                                  ? "bg-green-50 text-green-700 border-green-100"
+                                  : order.paymentStatus === "Failed"
+                                  ? "bg-red-50 text-red-700 border-red-100"
+                                  : order.paymentStatus === "Refunded"
+                                  ? "bg-orange-50 text-orange-700 border-orange-100"
+                                  : "bg-yellow-50 text-yellow-700 border-yellow-100"
+                              }`}>
+                                {order.paymentStatus}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-5 py-4 text-gray-600 text-xs">{formatDate(order.createdAt)}</td>
                           <td className="px-5 py-4 text-right">
