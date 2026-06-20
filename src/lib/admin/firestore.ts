@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Product, SizeStock } from "../data/products";
-import { PRODUCT_COLLECTION, mapProductDoc } from "../data/products";
+import { PRODUCT_COLLECTION, PRODUCT_CATEGORIES, mapProductDoc } from "../data/products";
 
 const COL = PRODUCT_COLLECTION;
 
@@ -101,6 +101,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     outOfStock: products.filter(
       (p) => Object.values(p.sizeStock ?? {}).reduce((s, q) => s + q, 0) === 0
     ).length,
-    categories: categorySet.size,
+    categories: PRODUCT_CATEGORIES.length,
   };
 }
