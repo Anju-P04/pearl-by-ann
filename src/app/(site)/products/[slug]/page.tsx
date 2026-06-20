@@ -70,7 +70,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Size selector */}
             <SizeSelector
+              productId={product.id}
               productName={product.name}
+              productSlug={product.slug}
+              productImage={product.images?.[0] ?? "/placeholder.jpg"}
               productPrice={product.price}
               sizeStock={product.sizeStock}
             />
