@@ -4,6 +4,7 @@ export const PRODUCT_CATEGORIES = [
   { value: "kurta", label: "Kurti" },
   { value: "kurti-set", label: "Kurti Set" },
   { value: "short-kurta", label: "Short Kurta" },
+  { value: "crop-top", label: "Crop Top" },
 ] as const;
 
 export type ProductSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";

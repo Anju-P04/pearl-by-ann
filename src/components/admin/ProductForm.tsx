@@ -11,6 +11,7 @@ const CATEGORIES = [
   { value: "kurta", label: "Kurti" },
   { value: "kurti-set", label: "Kurti Set" },
   { value: "short-kurta", label: "Short Kurta" },
+  { value: "crop-top", label: "Crop Top" },
 ];
 
 interface ProductFormProps {
