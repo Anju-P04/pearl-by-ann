@@ -12,6 +12,11 @@ import StatusChangeConfirmationModal from "@/components/admin/StatusChangeConfir
 import {
   getValidNextStatuses,
   isStatusLocked,
+  convertToWhatsAppPhone,
+  buildConfirmationMessage,
+  buildShippedMessage,
+  buildDeliveredMessage,
+  buildWhatsAppUrl,
 } from "@/lib/orders/statusTransitions";
 
 const STATUS_OPTIONS: OrderStatus[] = [
@@ -432,13 +437,67 @@ export default function AdminOrdersPage() {
                           </td>
                           <td className="px-5 py-4 text-gray-600 text-xs">{formatDate(order.createdAt)}</td>
                           <td className="px-5 py-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => adminGetAllOrders().then(setOrders)}
-                              className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                            >
-                              Refresh
-                            </button>
+                            <div className="flex flex-wrap items-center justify-end gap-1.5">
+                              {order.status === "Confirmed" && (
+                                <a
+                                  href={buildWhatsAppUrl(
+                                    convertToWhatsAppPhone(order.customerPhone),
+                                    buildConfirmationMessage(
+                                      order.customerName,
+                                      order.productName,
+                                      formatItemsSummary(order.items),
+                                      order.totalItems,
+                                      order.totalPrice
+                                    )
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
+                                  title="WhatsApp Confirm"
+                                >
+                                  WA Confirm
+                                </a>
+                              )}
+                              {order.status === "Shipped" && (
+                                <a
+                                  href={buildWhatsAppUrl(
+                                    convertToWhatsAppPhone(order.customerPhone),
+                                    buildShippedMessage(
+                                      order.customerName,
+                                      order.productName,
+                                      formatItemsSummary(order.items)
+                                    )
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+                                  title="WhatsApp Shipped"
+                                >
+                                  WA Shipped
+                                </a>
+                              )}
+                              {order.status === "Delivered" && (
+                                <a
+                                  href={buildWhatsAppUrl(
+                                    convertToWhatsAppPhone(order.customerPhone),
+                                    buildDeliveredMessage(order.customerName)
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
+                                  title="WhatsApp Delivered"
+                                >
+                                  WA Delivered
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => adminGetAllOrders().then(setOrders)}
+                                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                              >
+                                Refresh
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
