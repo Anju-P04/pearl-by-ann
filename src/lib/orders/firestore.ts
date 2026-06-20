@@ -16,6 +16,11 @@ export type OrderStatus =
   | "Delivered"
   | "Cancelled";
 
+export interface OrderItem {
+  size: string;
+  quantity: number;
+}
+
 export const ORDER_COLLECTION = "Orders" as const;
 
 export interface Order {
@@ -26,8 +31,8 @@ export interface Order {
   productName: string;
   productSlug: string;
   productImage: string;
-  size: string;
-  quantity: number;
+  items: OrderItem[];
+  totalItems: number;
   unitPrice: number;
   totalPrice: number;
   status: OrderStatus;
@@ -48,7 +53,40 @@ function isOrderStatus(value: unknown): value is OrderStatus {
   );
 }
 
+function isOrderItem(value: unknown): value is OrderItem {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).size === "string" &&
+    typeof (value as Record<string, unknown>).quantity === "number"
+  );
+}
+
+function normalizeOrderItems(data: Record<string, unknown>): OrderItem[] {
+  const rawItems = data.items;
+  if (Array.isArray(rawItems)) {
+    return rawItems
+      .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+      .map((item) => ({
+        size: typeof item.size === "string" ? item.size : "",
+        quantity: Number(item.quantity ?? 0),
+      }))
+      .filter((item) => item.size !== "" && item.quantity > 0);
+  }
+
+  const legacySize = typeof data.size === "string" ? data.size : "";
+  const legacyQuantity = Number(data.quantity ?? 0);
+  if (legacySize && legacyQuantity > 0) {
+    return [{ size: legacySize, quantity: legacyQuantity }];
+  }
+
+  return [];
+}
+
 function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
+  const items = normalizeOrderItems(data);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
   return {
     id,
     customerName: typeof data.customerName === "string" ? data.customerName : "",
@@ -57,10 +95,10 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
     productName: typeof data.productName === "string" ? data.productName : "",
     productSlug: typeof data.productSlug === "string" ? data.productSlug : "",
     productImage: typeof data.productImage === "string" ? data.productImage : "",
-    size: typeof data.size === "string" ? data.size : "",
-    quantity: Number(data.quantity ?? 0),
+    items,
+    totalItems,
     unitPrice: Number(data.unitPrice ?? 0),
-    totalPrice: Number(data.totalPrice ?? 0),
+    totalPrice: Number(data.totalPrice ?? totalItems * Number(data.unitPrice ?? 0)),
     status: isOrderStatus(data.status) ? data.status : "Pending",
     createdAt: typeof data.createdAt === "string" ? data.createdAt : new Date().toISOString(),
   };
@@ -69,8 +107,13 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
 const COL = ORDER_COLLECTION;
 
 export async function createOrder(data: CreateOrderData): Promise<string> {
+  const totalItems = data.totalItems ?? data.items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = data.totalPrice ?? totalItems * data.unitPrice;
+
   const payload = {
     ...data,
+    totalItems,
+    totalPrice,
     status: data.status ?? "Pending",
     createdAt: new Date().toISOString(),
   };

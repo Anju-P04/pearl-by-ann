@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { createOrder } from "@/lib/orders/firestore";
+import { createOrder, type OrderItem } from "@/lib/orders/firestore";
 
 interface OrderModalProps {
   productId: string;
   productName: string;
   productSlug: string;
   productImage: string;
-  size: string;
+  items: OrderItem[];
   unitPrice: number;
+  totalItems: number;
+  totalPrice: number;
   onClose: () => void;
 }
 
@@ -23,8 +25,10 @@ export default function OrderModal({
   productName,
   productSlug,
   productImage,
-  size,
+  items,
   unitPrice,
+  totalItems,
+  totalPrice,
   onClose,
 }: OrderModalProps) {
   const [customerName, setCustomerName] = useState("");
@@ -33,8 +37,6 @@ export default function OrderModal({
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-
-  const totalPrice = unitPrice;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,8 +68,8 @@ export default function OrderModal({
         productName,
         productSlug,
         productImage,
-        size,
-        quantity: 1,
+        items,
+        totalItems,
         unitPrice,
         totalPrice,
       });
@@ -90,7 +92,7 @@ export default function OrderModal({
             <p className="mt-1 text-sm text-gray-500">
               Product: <span className="font-medium text-gray-800">{productName}</span>
             </p>
-            <p className="text-sm text-gray-500">Size: {size}</p>
+            <p className="text-sm text-gray-500">Total items: {totalItems}</p>
           </div>
           <button
             type="button"
@@ -110,8 +112,21 @@ export default function OrderModal({
             />
             <div>
               <p className="text-sm font-semibold text-gray-900">{productName}</p>
-              <p className="text-sm text-gray-500">₹{unitPrice}</p>
+              <p className="text-sm text-gray-500">Unit price: ₹{unitPrice}</p>
             </div>
+          </div>
+
+          <div className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+            <p className="font-medium text-gray-800">Order summary</p>
+            <div className="mt-3 space-y-1">
+              {items.map((item) => (
+                <p key={item.size}>
+                  {item.size} × {item.quantity}
+                </p>
+              ))}
+            </div>
+            <p className="mt-3">Total: {totalItems} items</p>
+            <p className="font-semibold">Total price: ₹{totalPrice}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -137,13 +152,6 @@ export default function OrderModal({
                 type="tel"
               />
               {errors.phone && <p className="mt-2 text-xs text-red-600">{errors.phone}</p>}
-            </div>
-
-            <div className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
-              <p className="font-medium text-gray-800">Order summary</p>
-              <p className="mt-1">Quantity: 1</p>
-              <p>Unit price: ₹{unitPrice}</p>
-              <p className="font-semibold">Total: ₹{totalPrice}</p>
             </div>
 
             {errors.submit && <p className="text-sm text-red-600">{errors.submit}</p>}

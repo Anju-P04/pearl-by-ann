@@ -24,6 +24,15 @@ const NAV = [
     ),
   },
   {
+    label: "Orders",
+    href: "/admin/orders",
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M7 11h10M5 15h14M6 19h12" />
+      </svg>
+    ),
+  },
+  {
     label: "Add Product",
     href: "/admin/products/new",
     icon: (

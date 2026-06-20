@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminGuard from "@/components/admin/AdminGuard";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { getDashboardStats, type DashboardStats } from "@/lib/admin/firestore";
+import {
+  getDashboardStats,
+  type DashboardStats,
+  getOrderDashboardStats,
+  type OrderDashboardStats,
+} from "@/lib/admin/firestore";
 
 const STAT_CONFIG = [
   {
@@ -59,12 +64,61 @@ const STAT_CONFIG = [
   },
 ];
 
+const ORDER_STAT_CONFIG = [
+  {
+    key: "totalOrders" as keyof OrderDashboardStats,
+    label: "Total Orders",
+    color: "bg-olive",
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-6h6v6m-3-6v6" />
+      </svg>
+    ),
+  },
+  {
+    key: "pendingOrders" as keyof OrderDashboardStats,
+    label: "Pending Orders",
+    color: "bg-yellow-500",
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: "deliveredOrders" as keyof OrderDashboardStats,
+    label: "Delivered Orders",
+    color: "bg-green-600",
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    ),
+  },
+  {
+    key: "cancelledOrders" as keyof OrderDashboardStats,
+    label: "Cancelled Orders",
+    color: "bg-red-500",
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    ),
+  },
+];
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [orderStats, setOrderStats] = useState<OrderDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDashboardStats().then(setStats).finally(() => setLoading(false));
+    Promise.all([getDashboardStats(), getOrderDashboardStats()])
+      .then(([dashboard, orders]) => {
+        setStats(dashboard);
+        setOrderStats(orders);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -100,6 +154,41 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Order Statistics */}
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-xl font-semibold text-gray-800">
+                  Order statistics
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Track order volume and status from customer checkouts.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {ORDER_STAT_CONFIG.map((s) => (
+                <div
+                  key={s.key}
+                  className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+                >
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.color} text-white`}
+                  >
+                    {s.icon}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {loading ? "—" : orderStats?.[s.key] ?? 0}
+                    </p>
+                    <p className="text-xs text-gray-500">{s.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Quick Actions */}

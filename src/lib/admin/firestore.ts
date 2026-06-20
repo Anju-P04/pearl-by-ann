@@ -9,7 +9,18 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Product, SizeStock } from "../data/products";
-import { PRODUCT_COLLECTION, PRODUCT_CATEGORIES, mapProductDoc } from "../data/products";
+import {
+  PRODUCT_COLLECTION,
+  PRODUCT_CATEGORIES,
+  mapProductDoc,
+} from "../data/products";
+import type { Order } from "../orders/firestore";
+import {
+  getAllOrders as getAllOrdersFromOrders,
+  updateOrderStatus as updateOrderStatusFromOrders,
+} from "../orders/firestore";
+import { getOrderById } from "../orders/firestore";
+import { isValidTransition } from "../orders/statusTransitions";
 
 const COL = PRODUCT_COLLECTION;
 
@@ -46,6 +57,49 @@ export async function adminGetProductById(id: string): Promise<Product | null> {
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) return null;
   return mapProductDoc(snapshot.id, snapshot.data() as Record<string, unknown>);
+}
+
+export async function adminGetAllOrders(): Promise<Order[]> {
+  return getAllOrdersFromOrders();
+}
+
+export async function adminUpdateOrderStatus(
+  id: string,
+  nextStatus: Order["status"]
+): Promise<void> {
+  // Fetch current order to validate transition
+  const order = await getOrderById(id);
+  if (!order) {
+    throw new Error("Order not found.");
+  }
+
+  // Validate transition
+  if (!isValidTransition(order.status, nextStatus)) {
+    throw new Error(
+      `Invalid status transition from ${order.status} to ${nextStatus}.`
+    );
+  }
+
+  // Perform update
+  await updateOrderStatusFromOrders(id, nextStatus);
+}
+
+export interface OrderDashboardStats {
+  totalOrders: number;
+  pendingOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+}
+
+export async function getOrderDashboardStats(): Promise<OrderDashboardStats> {
+  const orders = await adminGetAllOrders();
+
+  return {
+    totalOrders: orders.length,
+    pendingOrders: orders.filter((order) => order.status === "Pending").length,
+    deliveredOrders: orders.filter((order) => order.status === "Delivered").length,
+    cancelledOrders: orders.filter((order) => order.status === "Cancelled").length,
+  };
 }
 
 // ---------------------------------------------------------------------------
