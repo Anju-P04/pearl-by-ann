@@ -33,6 +33,9 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${playfairDisplay.variable} ${cormorant.variable} h-full antialiased`}
     >
+      <head>
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      </head>
       <body className="min-h-full">{children}</body>
     </html>
   );

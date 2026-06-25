@@ -33,11 +33,64 @@ export default function OrderModal({
 }: OrderModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; payment?: string; submit?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; payment?: string; submit?: string; verification?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
+
+  async function verifyPayment(paymentResponse: any) {
+    setVerifying(true);
+    setErrors({});
+
+    try {
+      const response = await fetch('/api/razorpay/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: paymentResponse.razorpay_order_id,
+          razorpay_payment_id: paymentResponse.razorpay_payment_id,
+          razorpay_signature: paymentResponse.razorpay_signature,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Payment verified successfully - now create the Firestore order
+        try {
+          const id = await createOrder({
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            productId,
+            productName,
+            productSlug,
+            productImage,
+            items,
+            totalItems,
+            unitPrice,
+            totalPrice,
+            paymentMethod: "ONLINE",
+            paymentStatus: "Paid",
+          });
+
+          setOrderId(id);
+          setSuccess(true);
+        } catch (orderError) {
+          setErrors({ verification: 'Payment verified but failed to create order. Please contact support.' });
+        }
+      } else {
+        // Payment verification failed
+        setErrors({ verification: result.message || 'Payment verification failed' });
+      }
+    } catch (error) {
+      setErrors({ verification: 'Unable to verify payment. Please contact support.' });
+    } finally {
+      setVerifying(false);
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,26 +119,72 @@ export default function OrderModal({
     setSubmitting(true);
 
     try {
-      const id = await createOrder({
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        productId,
-        productName,
-        productSlug,
-        productImage,
-        items,
-        totalItems,
-        unitPrice,
-        totalPrice,
-        paymentMethod: paymentMethod as PaymentMethod,
-      });
+      if (paymentMethod === "COD") {
+        // COD flow remains unchanged
+        const id = await createOrder({
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          productId,
+          productName,
+          productSlug,
+          productImage,
+          items,
+          totalItems,
+          unitPrice,
+          totalPrice,
+          paymentMethod: paymentMethod as PaymentMethod,
+        });
 
-      setOrderId(id);
-      setSuccess(true);
+        setOrderId(id);
+        setSuccess(true);
+      } else {
+        // ONLINE payment flow with Razorpay
+        const response = await fetch('/api/razorpay/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: totalPrice }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create Razorpay order');
+        }
+
+        const { razorpayOrderId, amount, currency } = await response.json();
+
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount,
+          currency,
+          name: 'Pearl by Ann',
+          description: `Order for ${productName}`,
+          order_id: razorpayOrderId,
+          prefill: {
+            name: customerName.trim(),
+            contact: customerPhone.trim(),
+          },
+          handler: function (response: any) {
+            // Payment reported as successful by Razorpay
+            // Now verify the payment on the server
+            verifyPayment(response);
+          },
+          modal: {
+            ondismiss: function () {
+              // User closed the Razorpay popup - cancel payment
+              setSubmitting(false);
+            },
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      }
     } catch (error) {
       setErrors({ submit: "Unable to place order. Please try again." });
-    } finally {
       setSubmitting(false);
+    } finally {
+      if (paymentMethod === "COD") {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -190,11 +289,22 @@ export default function OrderModal({
             </div>
 
             {errors.submit && <p className="text-sm text-red-600">{errors.submit}</p>}
+            {errors.verification && <p className="text-sm text-red-600">{errors.verification}</p>}
+            {verifying && <p className="text-sm text-blue-600">Processing payment and creating order...</p>}
 
             {success ? (
               <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                <p className="font-semibold">Order placed successfully!</p>
-                <p className="mt-1">Your order ID is {orderId}.</p>
+                {paymentMethod === "COD" ? (
+                  <>
+                    <p className="font-semibold">Order placed successfully!</p>
+                    <p className="mt-1">Your order ID is {orderId}.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">Payment successful. Your order has been placed.</p>
+                    <p className="mt-1">Your order ID is {orderId}.</p>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={onClose}
@@ -207,15 +317,15 @@ export default function OrderModal({
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || verifying}
                   className="flex-1 rounded-full bg-olive px-6 py-3 text-sm font-semibold text-white transition hover:bg-olive-light disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {submitting ? "Placing order…" : "Confirm Order"}
+                  {verifying ? "Creating order..." : submitting ? "Processing..." : "Confirm Order"}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  disabled={submitting}
+                  disabled={submitting || verifying}
                   className="flex-1 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
