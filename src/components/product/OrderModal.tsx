@@ -196,13 +196,11 @@ export default function OrderModal({
             name: customerName.trim(),
             contact: customerPhone.trim(),
           },
-         handler: function (response: any) {
-          alert("Handler Called");
-
-          console.log("Razorpay Handler Response:", response);
-
-          verifyPayment(response);
-         },
+          handler: function (response: any) {
+            // Payment reported as successful by Razorpay
+            // Now verify the payment on the server
+            verifyPayment(response);
+          },
           modal: {
             ondismiss: function () {
               // User closed the Razorpay popup - cancel payment
