@@ -41,56 +41,90 @@ export default function OrderModal({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
 
   async function verifyPayment(paymentResponse: any) {
-    setVerifying(true);
-    setErrors({});
+  setVerifying(true);
+  setErrors({});
 
-    try {
-      const response = await fetch('/api/razorpay/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razorpay_order_id: paymentResponse.razorpay_order_id,
-          razorpay_payment_id: paymentResponse.razorpay_payment_id,
-          razorpay_signature: paymentResponse.razorpay_signature,
-        }),
-      });
+  console.log("======================================");
+  console.log("verifyPayment() called");
+  console.log("Payment Response:", paymentResponse);
+  console.log("======================================");
 
-      const result = await response.json();
+  try {
+    const response = await fetch("/api/razorpay/verify-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        razorpay_order_id: paymentResponse.razorpay_order_id,
+        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+        razorpay_signature: paymentResponse.razorpay_signature,
+      }),
+    });
 
-      if (result.success) {
-        // Payment verified successfully - now create the Firestore order
-        try {
-          const id = await createOrder({
-            customerName: customerName.trim(),
-            customerPhone: customerPhone.trim(),
-            productId,
-            productName,
-            productSlug,
-            productImage,
-            items,
-            totalItems,
-            unitPrice,
-            totalPrice,
-            paymentMethod: "ONLINE",
-            paymentStatus: "Paid",
-          });
+    const result = await response.json();
 
-          setOrderId(id);
-          setSuccess(true);
-        } catch (orderError) {
-          setErrors({ verification: 'Payment verified but failed to create order. Please contact support.' });
-        }
-      } else {
-        // Payment verification failed
-        setErrors({ verification: result.message || 'Payment verification failed' });
+    console.log("Verification API Response:", result);
+
+    if (result.success) {
+      console.log("Verification successful. Creating Firestore order...");
+
+      try {
+        const id = await createOrder({
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          productId,
+          productName,
+          productSlug,
+          productImage,
+          items,
+          totalItems,
+          unitPrice,
+          totalPrice,
+          paymentMethod: "ONLINE",
+          paymentStatus: "Paid",
+        });
+
+        console.log("======================================");
+        console.log("FIRESTORE ORDER CREATED SUCCESSFULLY");
+        console.log("Order ID:", id);
+        console.log("======================================");
+
+        setOrderId(id);
+        setSuccess(true);
+      } catch (orderError) {
+        console.error("======================================");
+        console.error("CREATE ORDER FAILED");
+        console.error(orderError);
+        console.error("Customer:", customerName);
+        console.error("Phone:", customerPhone);
+        console.error("Product:", productName);
+        console.error("Items:", items);
+        console.error("======================================");
+
+        setErrors({
+          verification:
+            "Payment verified but failed to create order. Please contact support.",
+        });
       }
-    } catch (error) {
-      setErrors({ verification: 'Unable to verify payment. Please contact support.' });
-    } finally {
-      setVerifying(false);
-      setSubmitting(false);
+    } else {
+      console.error("Verification Failed:", result);
+
+      setErrors({
+        verification: result.message || "Payment verification failed",
+      });
     }
+  } catch (error) {
+    console.error("VERIFY PAYMENT API ERROR:", error);
+
+    setErrors({
+      verification: "Unable to verify payment. Please contact support.",
+    });
+  } finally {
+    setVerifying(false);
+    setSubmitting(false);
   }
+}
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -162,11 +196,13 @@ export default function OrderModal({
             name: customerName.trim(),
             contact: customerPhone.trim(),
           },
-          handler: function (response: any) {
-            // Payment reported as successful by Razorpay
-            // Now verify the payment on the server
-            verifyPayment(response);
-          },
+         handler: function (response: any) {
+          alert("Handler Called");
+
+          console.log("Razorpay Handler Response:", response);
+
+          verifyPayment(response);
+         },
           modal: {
             ondismiss: function () {
               // User closed the Razorpay popup - cancel payment
