@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminGuard from "@/components/admin/AdminGuard";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
@@ -157,6 +157,7 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [statusChangeModal, setStatusChangeModal] = useState<{
     orderId: string;
     currentStatus: OrderStatus;
@@ -425,128 +426,183 @@ export default function AdminOrdersPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {filteredOrders.map((order) => (
-                        <tr key={order.id} className="hover:bg-gray-50">
-                          <td className="px-5 py-4">
-                            <div className="font-medium text-gray-900">{order.customerName}</div>
-                          </td>
-                          <td className="px-5 py-4 text-gray-600 text-xs font-mono">{order.customerPhone}</td>
-                          <td className="px-5 py-4 text-gray-600">{order.productName}</td>
-                          <td className="px-5 py-4 whitespace-pre-line text-gray-600 text-xs">
-                            {formatItemsSummary(order.items)}
-                          </td>
-                          <td className="px-5 py-4 font-semibold text-olive">₹{order.totalPrice}</td>
-                          <td className="px-5 py-4">
-                            {isStatusLocked(order.status) ? (
-                              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border ${STATUS_COLORS[order.status]}`}>
-                                {order.status}
-                              </span>
-                            ) : (
-                              <select
-                                value={order.status}
-                                onChange={(e) =>
-                                  handleStatusChangeClick(order.id, e.target.value as OrderStatus)
-                                }
-                                disabled={updating[order.id]}
-                                className={`rounded-lg border px-2 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-olive ${
-                                  STATUS_COLORS[order.status]
-                                }`}
-                              >
-                                <option value={order.status}>{order.status}</option>
-                                {getValidNextStatuses(order.status).map((status) => (
-                                  <option key={status} value={status}>
-                                    {status}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
-                                order.paymentMethod === "COD"
-                                  ? "bg-gray-50 text-gray-600 border-gray-200"
-                                  : "bg-purple-50 text-purple-700 border-purple-100"
-                              }`}>
-                                {order.paymentMethod}
-                              </span>
-                              <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
-                                order.paymentStatus === "Paid"
-                                  ? "bg-green-50 text-green-700 border-green-100"
-                                  : order.paymentStatus === "Failed"
-                                  ? "bg-red-50 text-red-700 border-red-100"
-                                  : order.paymentStatus === "Refunded"
-                                  ? "bg-orange-50 text-orange-700 border-orange-100"
-                                  : "bg-yellow-50 text-yellow-700 border-yellow-100"
-                              }`}>
-                                {order.paymentStatus}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 text-gray-600 text-xs">{formatDate(order.createdAt)}</td>
-                          <td className="px-5 py-4 text-right">
-                            <div className="flex flex-wrap items-center justify-end gap-1.5">
-                              {order.status === "Confirmed" && (
-                                <a
-                                  href={buildWhatsAppUrl(
-                                    convertToWhatsAppPhone(order.customerPhone),
-                                    buildConfirmationMessage(
-                                      order.customerName,
-                                      order.productName,
-                                      formatItemsSummary(order.items),
-                                      order.totalItems,
-                                      order.totalPrice
-                                    )
-                                  )}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
-                                  title="WhatsApp Confirm"
+                        <React.Fragment key={order.id}>
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-5 py-4">
+                              <div className="font-medium text-gray-900">{order.customerName}</div>
+                            </td>
+                            <td className="px-5 py-4 text-gray-600 text-xs font-mono">{order.customerPhone}</td>
+                            <td className="px-5 py-4 text-gray-600">{order.productName}</td>
+                            <td className="px-5 py-4 whitespace-pre-line text-gray-600 text-xs">
+                              {formatItemsSummary(order.items)}
+                            </td>
+                            <td className="px-5 py-4 font-semibold text-olive">₹{order.totalPrice}</td>
+                            <td className="px-5 py-4">
+                              {isStatusLocked(order.status) ? (
+                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border ${STATUS_COLORS[order.status]}`}>
+                                  {order.status}
+                                </span>
+                              ) : (
+                                <select
+                                  value={order.status}
+                                  onChange={(e) =>
+                                    handleStatusChangeClick(order.id, e.target.value as OrderStatus)
+                                  }
+                                  disabled={updating[order.id]}
+                                  className={`rounded-lg border px-2 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-olive ${
+                                    STATUS_COLORS[order.status]
+                                  }`}
                                 >
-                                  WA Confirm
-                                </a>
+                                  <option value={order.status}>{order.status}</option>
+                                  {getValidNextStatuses(order.status).map((status) => (
+                                    <option key={status} value={status}>
+                                      {status}
+                                    </option>
+                                  ))}
+                                </select>
                               )}
-                              {order.status === "Shipped" && (
-                                <a
-                                  href={buildWhatsAppUrl(
-                                    convertToWhatsAppPhone(order.customerPhone),
-                                    buildShippedMessage(
-                                      order.customerName,
-                                      order.productName,
-                                      formatItemsSummary(order.items)
-                                    )
-                                  )}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
-                                  title="WhatsApp Shipped"
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex flex-col gap-1">
+                                <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                  order.paymentMethod === "COD"
+                                    ? "bg-gray-50 text-gray-600 border-gray-200"
+                                    : "bg-purple-50 text-purple-700 border-purple-100"
+                                }`}>
+                                  {order.paymentMethod}
+                                </span>
+                                <span className={`inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                  order.paymentStatus === "Paid"
+                                    ? "bg-green-50 text-green-700 border-green-100"
+                                    : order.paymentStatus === "Failed"
+                                    ? "bg-red-50 text-red-700 border-red-100"
+                                    : order.paymentStatus === "Refunded"
+                                    ? "bg-orange-50 text-orange-700 border-orange-100"
+                                    : "bg-yellow-50 text-yellow-700 border-yellow-100"
+                                }`}>
+                                  {order.paymentStatus}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-gray-600 text-xs">{formatDate(order.createdAt)}</td>
+                            <td className="px-5 py-4 text-right">
+                              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                {order.paymentMethod === "ONLINE" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                    className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
+                                  >
+                                    {expandedOrder === order.id ? "Hide" : "Payment"} Details
+                                  </button>
+                                )}
+                                {order.status === "Confirmed" && (
+                                  <a
+                                    href={buildWhatsAppUrl(
+                                      convertToWhatsAppPhone(order.customerPhone),
+                                      buildConfirmationMessage(
+                                        order.customerName,
+                                        order.productName,
+                                        formatItemsSummary(order.items),
+                                        order.totalItems,
+                                        order.totalPrice
+                                      )
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
+                                    title="WhatsApp Confirm"
+                                  >
+                                    WA Confirm
+                                  </a>
+                                )}
+                                {order.status === "Shipped" && (
+                                  <a
+                                    href={buildWhatsAppUrl(
+                                      convertToWhatsAppPhone(order.customerPhone),
+                                      buildShippedMessage(
+                                        order.customerName,
+                                        order.productName,
+                                        formatItemsSummary(order.items)
+                                      )
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+                                    title="WhatsApp Shipped"
+                                  >
+                                    WA Shipped
+                                  </a>
+                                )}
+                                {order.status === "Delivered" && (
+                                  <a
+                                    href={buildWhatsAppUrl(
+                                      convertToWhatsAppPhone(order.customerPhone),
+                                      buildDeliveredMessage(order.customerName)
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
+                                    title="WhatsApp Delivered"
+                                  >
+                                    WA Delivered
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => adminGetAllOrders().then(setOrders)}
+                                  className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
                                 >
-                                  WA Shipped
-                                </a>
-                              )}
-                              {order.status === "Delivered" && (
-                                <a
-                                  href={buildWhatsAppUrl(
-                                    convertToWhatsAppPhone(order.customerPhone),
-                                    buildDeliveredMessage(order.customerName)
-                                  )}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100"
-                                  title="WhatsApp Delivered"
-                                >
-                                  WA Delivered
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => adminGetAllOrders().then(setOrders)}
-                                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                              >
-                                Refresh
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                                  Refresh
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Payment Details Expansion Row */}
+                          {expandedOrder === order.id && order.paymentMethod === "ONLINE" && (
+                            <tr>
+                              <td colSpan={9} className="px-5 py-4 bg-purple-50 border-t border-purple-100">
+                                <div className="rounded-lg bg-white p-4 shadow-sm">
+                                  <h4 className="text-sm font-semibold text-gray-800 mb-3">Payment Details</h4>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                      <p className="text-gray-500 font-medium mb-1">Payment Method</p>
+                                      <p className="text-gray-800 font-mono">{order.paymentMethod}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-gray-500 font-medium mb-1">Payment Status</p>
+                                      <p className="text-gray-800 font-mono">{order.paymentStatus}</p>
+                                    </div>
+                                    {order.razorpayOrderId && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Razorpay Order ID</p>
+                                        <p className="text-gray-800 font-mono text-xs break-all">{order.razorpayOrderId}</p>
+                                      </div>
+                                    )}
+                                    {order.razorpayPaymentId && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Razorpay Payment ID</p>
+                                        <p className="text-gray-800 font-mono text-xs break-all">{order.razorpayPaymentId}</p>
+                                      </div>
+                                    )}
+                                    {order.razorpaySignature && (
+                                      <div className="md:col-span-2">
+                                        <p className="text-gray-500 font-medium mb-1">Razorpay Signature</p>
+                                        <p className="text-gray-800 font-mono text-xs break-all">{order.razorpaySignature}</p>
+                                      </div>
+                                    )}
+                                    {order.paidAt && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Paid At</p>
+                                        <p className="text-gray-800 font-mono">{formatDate(order.paidAt)}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>

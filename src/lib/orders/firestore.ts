@@ -44,11 +44,20 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   createdAt: string;
+  // Razorpay transaction details (optional for COD orders)
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  paidAt?: string;
 }
 
 export type CreateOrderData = Omit<Order, "id" | "status" | "paymentStatus" | "createdAt"> & {
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  paidAt?: string;
 };
 
 function isOrderStatus(value: unknown): value is OrderStatus {
@@ -111,6 +120,11 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
     paymentMethod: (data.paymentMethod === "COD" || data.paymentMethod === "ONLINE") ? data.paymentMethod as PaymentMethod : "COD",
     paymentStatus: (data.paymentStatus === "Pending" || data.paymentStatus === "Paid" || data.paymentStatus === "Failed" || data.paymentStatus === "Refunded") ? data.paymentStatus as PaymentStatus : "Pending",
     createdAt: typeof data.createdAt === "string" ? data.createdAt : new Date().toISOString(),
+    // Optional Razorpay fields
+    ...(typeof data.razorpayOrderId === "string" && { razorpayOrderId: data.razorpayOrderId }),
+    ...(typeof data.razorpayPaymentId === "string" && { razorpayPaymentId: data.razorpayPaymentId }),
+    ...(typeof data.razorpaySignature === "string" && { razorpaySignature: data.razorpaySignature }),
+    ...(typeof data.paidAt === "string" && { paidAt: data.paidAt }),
   };
 }
 

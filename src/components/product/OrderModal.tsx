@@ -83,6 +83,10 @@ export default function OrderModal({
           totalPrice,
           paymentMethod: "ONLINE",
           paymentStatus: "Paid",
+          razorpayOrderId: paymentResponse.razorpay_order_id,
+          razorpayPaymentId: paymentResponse.razorpay_payment_id,
+          razorpaySignature: paymentResponse.razorpay_signature,
+          paidAt: new Date().toISOString(),
         });
 
         console.log("======================================");
