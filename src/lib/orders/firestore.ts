@@ -8,9 +8,10 @@ import {
   deleteDoc,
   query,
   orderBy,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { deductInventoryForOrder } from "../inventory/firestore";
+import { deductInventoryForOrder, restoreInventoryForOrder } from "../inventory/firestore";
 
 export type OrderStatus =
   | "Pending"
@@ -51,6 +52,8 @@ export interface Order {
   razorpayPaymentId?: string;
   razorpaySignature?: string;
   paidAt?: string;
+  // Inventory tracking
+  inventoryRestored?: boolean;
 }
 
 export type CreateOrderData = Omit<Order, "id" | "status" | "paymentStatus" | "createdAt"> & {
@@ -127,6 +130,8 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
     ...(typeof data.razorpayPaymentId === "string" && { razorpayPaymentId: data.razorpayPaymentId }),
     ...(typeof data.razorpaySignature === "string" && { razorpaySignature: data.razorpaySignature }),
     ...(typeof data.paidAt === "string" && { paidAt: data.paidAt }),
+    // Inventory tracking field (defaults to false for existing orders)
+    inventoryRestored: Boolean(data.inventoryRestored),
   };
 }
 
@@ -194,7 +199,52 @@ export async function updateOrderStatus(
   id: string,
   status: OrderStatus
 ): Promise<void> {
-  await updateDoc(doc(db, COL, id), { status });
+  const orderRef = doc(db, COL, id);
+  
+  // Use transaction to ensure consistent updates
+  await runTransaction(db, async (transaction) => {
+    // Read current order data
+    const orderDoc = await transaction.get(orderRef);
+    
+    if (!orderDoc.exists()) {
+      throw new Error("Order not found");
+    }
+    
+    const orderData = orderDoc.data();
+    const currentStatus = orderData.status as OrderStatus;
+    const inventoryRestored = Boolean(orderData.inventoryRestored);
+    
+    // Check if we're cancelling an order and need to restore inventory
+    const shouldRestoreInventory = 
+      status === "Cancelled" && 
+      (currentStatus === "Pending" || currentStatus === "Confirmed") &&
+      !inventoryRestored;
+    
+    if (shouldRestoreInventory) {
+      // Restore inventory first
+      const restoreResult = await restoreInventoryForOrder(
+        orderData.productId,
+        orderData.items
+      );
+      
+      if (!restoreResult.success) {
+        throw new Error(`Failed to restore inventory: ${restoreResult.error}`);
+      }
+      
+      // Update order with new status and mark inventory as restored
+      transaction.update(orderRef, {
+        status,
+        inventoryRestored: true,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      // Update only status
+      transaction.update(orderRef, {
+        status,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  });
 }
 
 export async function deleteOrder(id: string): Promise<void> {
