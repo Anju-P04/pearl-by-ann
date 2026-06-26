@@ -6,9 +6,11 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import {
   adminGetAllOrders,
   adminUpdateOrderStatus,
+  adminProcessRefund,
 } from "@/lib/admin/firestore";
 import type { Order, OrderStatus, PaymentMethod, PaymentStatus } from "@/lib/orders/firestore";
 import StatusChangeConfirmationModal from "@/components/admin/StatusChangeConfirmationModal";
+import RefundConfirmationModal from "@/components/admin/RefundConfirmationModal";
 import {
   getValidNextStatuses,
   isStatusLocked,
@@ -175,6 +177,13 @@ export default function AdminOrdersPage() {
     currentStatus: OrderStatus;
     nextStatus: OrderStatus;
   } | null>(null);
+  const [refundModal, setRefundModal] = useState<{
+    orderId: string;
+    orderAmount: number;
+    paymentId: string;
+  } | null>(null);
+  const [refundLoading, setRefundLoading] = useState<Record<string, boolean>>({});
+  const [refundSuccess, setRefundSuccess] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     adminGetAllOrders()
@@ -204,6 +213,78 @@ export default function AdminOrdersPage() {
   }, [orders, search, statusFilter]);
 
   const summaryCount = useMemo(() => filteredOrders.length, [filteredOrders]);
+
+  function isRefundEligible(order: Order): boolean {
+    return (
+      order.paymentMethod === "ONLINE" &&
+      order.paymentStatus === "Paid" &&
+      order.status === "Cancelled" &&
+      order.refundStatus !== "Processed"
+    );
+  }
+
+  function handleRefundClick(orderId: string, orderAmount: number, paymentId: string) {
+    setRefundModal({ orderId, orderAmount, paymentId });
+  }
+
+  async function processRefund() {
+    if (!refundModal) return;
+
+    const { orderId, orderAmount, paymentId } = refundModal;
+    setRefundLoading(prev => ({ ...prev, [orderId]: true }));
+    
+    try {
+      // Call Razorpay refund API
+      const refundResponse = await fetch('/api/razorpay/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId, amount: orderAmount }),
+      });
+      
+      const refundResult = await refundResponse.json();
+      
+      if (!refundResult.success) {
+        throw new Error(refundResult.details || 'Refund failed');
+      }
+      
+      // Update Firestore with refund information
+      await adminProcessRefund(orderId, {
+        refundId: refundResult.refundId,
+        refundAmount: refundResult.amount,
+        refundedAt: new Date().toISOString(),
+      });
+      
+      // Update local state
+      setOrders(prev =>
+        prev.map(o => 
+          o.id === orderId 
+            ? {
+                ...o,
+                refundId: refundResult.refundId,
+                refundStatus: "Processed" as const,
+                refundAmount: refundResult.amount,
+                refundedAt: new Date().toISOString(),
+                paymentStatus: "Refunded" as PaymentStatus,
+              }
+            : o
+        )
+      );
+      
+      setRefundSuccess(prev => ({ ...prev, [orderId]: true }));
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setRefundSuccess(prev => ({ ...prev, [orderId]: false }));
+      }, 3000);
+      
+    } catch (error: any) {
+      console.error('Refund processing failed:', error);
+      setError(`Refund failed: ${error.message}`);
+    } finally {
+      setRefundLoading(prev => ({ ...prev, [orderId]: false }));
+      setRefundModal(null);
+    }
+  }
 
   function handleStatusChangeClick(orderId: string, nextStatus: OrderStatus) {
     const order = orders.find((o) => o.id === orderId);
@@ -513,6 +594,26 @@ export default function AdminOrdersPage() {
                                     {expandedOrder === order.id ? "Hide" : "Payment"} Details
                                   </button>
                                 )}
+                                {isRefundEligible(order) && order.razorpayPaymentId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRefundClick(order.id, order.totalPrice, order.razorpayPaymentId!)}
+                                    disabled={refundLoading[order.id]}
+                                    className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                                  >
+                                    {refundLoading[order.id] ? "Processing..." : "Refund"}
+                                  </button>
+                                )}
+                                {order.refundStatus === "Processed" && (
+                                  <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-medium text-orange-700">
+                                    Refund Completed
+                                  </span>
+                                )}
+                                {refundSuccess[order.id] && (
+                                  <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700">
+                                    Refund Successful
+                                  </span>
+                                )}
                                 {order.status === "Confirmed" && (
                                   <a
                                     href={buildWhatsAppUrl(
@@ -617,6 +718,33 @@ export default function AdminOrdersPage() {
                                         </div>
                                       </div>
                                     )}
+                                    {order.refundStatus && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Refund Status</p>
+                                        <p className="text-gray-800 font-mono">{order.refundStatus}</p>
+                                      </div>
+                                    )}
+                                    {order.refundAmount && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Refund Amount</p>
+                                        <p className="text-gray-800 font-mono">₹{order.refundAmount}</p>
+                                      </div>
+                                    )}
+                                    {order.refundId && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Refund ID</p>
+                                        <p className="text-gray-800 font-mono text-xs break-all">{order.refundId}</p>
+                                      </div>
+                                    )}
+                                    {order.refundedAt && (
+                                      <div>
+                                        <p className="text-gray-500 font-medium mb-1">Refund Date</p>
+                                        <div className="text-gray-800 font-mono text-xs">
+                                          <div>{formatDate(order.refundedAt)}</div>
+                                          <div className="text-gray-600">{formatTime(order.refundedAt)}</div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </td>
@@ -639,6 +767,15 @@ export default function AdminOrdersPage() {
             onConfirm={confirmStatusChange}
             onCancel={() => setStatusChangeModal(null)}
             loading={updating[statusChangeModal.orderId]}
+          />
+        )}
+
+        {refundModal && (
+          <RefundConfirmationModal
+            orderAmount={refundModal.orderAmount}
+            onConfirm={processRefund}
+            onCancel={() => setRefundModal(null)}
+            loading={refundLoading[refundModal.orderId]}
           />
         )}
       </AdminLayout>

@@ -24,6 +24,8 @@ export type PaymentMethod = "COD" | "ONLINE";
 
 export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
 
+export type RefundStatus = "Processed";
+
 export interface OrderItem {
   size: string;
   quantity: number;
@@ -52,6 +54,11 @@ export interface Order {
   razorpayPaymentId?: string;
   razorpaySignature?: string;
   paidAt?: string;
+  // Refund fields (optional)
+  refundId?: string;
+  refundStatus?: RefundStatus;
+  refundAmount?: number;
+  refundedAt?: string;
   // Inventory tracking
   inventoryRestored?: boolean;
 }
@@ -130,6 +137,11 @@ function mapOrderDoc(id: string, data: Record<string, unknown>): Order {
     ...(typeof data.razorpayPaymentId === "string" && { razorpayPaymentId: data.razorpayPaymentId }),
     ...(typeof data.razorpaySignature === "string" && { razorpaySignature: data.razorpaySignature }),
     ...(typeof data.paidAt === "string" && { paidAt: data.paidAt }),
+    // Optional refund fields
+    ...(typeof data.refundId === "string" && { refundId: data.refundId }),
+    ...(data.refundStatus === "Processed" && { refundStatus: data.refundStatus }),
+    ...(typeof data.refundAmount === "number" && { refundAmount: data.refundAmount }),
+    ...(typeof data.refundedAt === "string" && { refundedAt: data.refundedAt }),
     // Inventory tracking field (defaults to false for existing orders)
     inventoryRestored: Boolean(data.inventoryRestored),
   };
