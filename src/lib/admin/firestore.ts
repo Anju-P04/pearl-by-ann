@@ -17,6 +17,7 @@ import {
 import type { Order } from "../orders/firestore";
 import {
   getAllOrders as getAllOrdersFromOrders,
+  getAllOrdersSortedByDate as getAllOrdersSortedByDateFromOrders,
   updateOrderStatus as updateOrderStatusFromOrders,
 } from "../orders/firestore";
 import { getOrderById } from "../orders/firestore";
@@ -60,7 +61,7 @@ export async function adminGetProductById(id: string): Promise<Product | null> {
 }
 
 export async function adminGetAllOrders(): Promise<Order[]> {
-  return getAllOrdersFromOrders();
+  return getAllOrdersSortedByDateFromOrders();
 }
 
 export async function adminUpdateOrderStatus(

@@ -41,15 +41,27 @@ function formatItemsSummary(items: Order["items"]) {
 
 function formatDate(date: string) {
   try {
-    return new Intl.DateTimeFormat("en-IN", {
-      year: "numeric",
+    const dateObj = new Date(date);
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
       month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date));
+      year: "numeric",
+    }).format(dateObj);
   } catch {
     return date;
+  }
+}
+
+function formatTime(date: string) {
+  try {
+    const dateObj = new Date(date);
+    return new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(dateObj);
+  } catch {
+    return "";
   }
 }
 
@@ -484,7 +496,12 @@ export default function AdminOrdersPage() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-gray-600 text-xs">{formatDate(order.createdAt)}</td>
+                            <td className="px-5 py-4 text-gray-600 text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{formatDate(order.createdAt)}</span>
+                                <span className="text-gray-400">{formatTime(order.createdAt)}</span>
+                              </div>
+                            </td>
                             <td className="px-5 py-4 text-right">
                               <div className="flex flex-wrap items-center justify-end gap-1.5">
                                 {order.paymentMethod === "ONLINE" && (
@@ -594,7 +611,10 @@ export default function AdminOrdersPage() {
                                     {order.paidAt && (
                                       <div>
                                         <p className="text-gray-500 font-medium mb-1">Paid At</p>
-                                        <p className="text-gray-800 font-mono">{formatDate(order.paidAt)}</p>
+                                        <div className="text-gray-800 font-mono text-xs">
+                                          <div>{formatDate(order.paidAt)}</div>
+                                          <div className="text-gray-600">{formatTime(order.paidAt)}</div>
+                                        </div>
                                       </div>
                                     )}
                                   </div>

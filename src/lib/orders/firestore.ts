@@ -6,6 +6,8 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { deductInventoryForOrder } from "../inventory/firestore";
@@ -175,6 +177,14 @@ export async function getOrderById(id: string): Promise<Order | null> {
 
 export async function getAllOrders(): Promise<Order[]> {
   const snapshot = await getDocs(collection(db, COL));
+  return snapshot.docs.map((doc) =>
+    mapOrderDoc(doc.id, doc.data() as Record<string, unknown>)
+  );
+}
+
+export async function getAllOrdersSortedByDate(): Promise<Order[]> {
+  const q = query(collection(db, COL), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) =>
     mapOrderDoc(doc.id, doc.data() as Record<string, unknown>)
   );
