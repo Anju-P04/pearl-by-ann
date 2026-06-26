@@ -33,7 +33,7 @@ export default function OrderModal({
 }: OrderModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; payment?: string; submit?: string; verification?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; payment?: string; submit?: string; verification?: string; inventory?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -102,10 +102,17 @@ export default function OrderModal({
         console.error("Items:", items);
         console.error("======================================");
 
-        setErrors({
-          verification:
-            "Payment verified but failed to create order. Please contact support.",
-        });
+        const errorMessage = orderError instanceof Error ? orderError.message : "Unknown error";
+        
+        if (errorMessage.includes("Insufficient stock") || errorMessage.includes("Inventory deduction failed")) {
+          setErrors({
+            inventory: errorMessage,
+          });
+        } else {
+          setErrors({
+            verification: "Payment verified but failed to create order. Please contact support.",
+          });
+        }
       }
     } else {
       console.error("Verification Failed:", result);
@@ -213,7 +220,13 @@ export default function OrderModal({
         razorpay.open();
       }
     } catch (error) {
-      setErrors({ submit: "Unable to place order. Please try again." });
+      const errorMessage = error instanceof Error ? error.message : "Unable to place order. Please try again.";
+      
+      if (errorMessage.includes("Insufficient stock") || errorMessage.includes("Inventory deduction failed")) {
+        setErrors({ inventory: errorMessage });
+      } else {
+        setErrors({ submit: errorMessage });
+      }
       setSubmitting(false);
     } finally {
       if (paymentMethod === "COD") {
@@ -324,6 +337,7 @@ export default function OrderModal({
 
             {errors.submit && <p className="text-sm text-red-600">{errors.submit}</p>}
             {errors.verification && <p className="text-sm text-red-600">{errors.verification}</p>}
+            {errors.inventory && <p className="text-sm text-red-600">{errors.inventory}</p>}
             {verifying && <p className="text-sm text-blue-600">Processing payment and creating order...</p>}
 
             {success ? (

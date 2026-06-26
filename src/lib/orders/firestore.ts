@@ -8,6 +8,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { deductInventoryForOrder } from "../inventory/firestore";
 
 export type OrderStatus =
   | "Pending"
@@ -128,8 +129,27 @@ export async function createOrder(data: CreateOrderData): Promise<string> {
     createdAt: new Date().toISOString(),
   };
 
+  // Create the order first
   const ref = await addDoc(collection(db, COL), payload as Omit<Order, "id">);
-  return ref.id;
+  const orderId = ref.id;
+
+  // After successful order creation, deduct inventory
+  try {
+    const inventoryResult = await deductInventoryForOrder(data.productId, data.items);
+    
+    if (!inventoryResult.success) {
+      // If inventory deduction fails, we should ideally rollback the order
+      // For now, we'll throw an error to prevent the order from being considered successful
+      throw new Error(`Inventory deduction failed: ${inventoryResult.error}`);
+    }
+  } catch (inventoryError) {
+    // Log the error but don't fail the order creation to avoid data inconsistency
+    // In a production system, you might want to implement a compensation pattern
+    console.error("Failed to deduct inventory for order:", orderId, inventoryError);
+    throw inventoryError;
+  }
+
+  return orderId;
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {

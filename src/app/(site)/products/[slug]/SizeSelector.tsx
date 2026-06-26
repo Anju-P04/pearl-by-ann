@@ -76,29 +76,36 @@ export default function SizeSelector({
         {PRODUCT_SIZES.map((size) => {
           const stock = sizeStock[size] ?? 0;
           const quantity = quantities[size] ?? 0;
-          const canIncrement = quantity < stock;
+          const canIncrement = quantity < stock && stock > 0;
           const canDecrement = quantity > 0;
+          const isOutOfStock = stock === 0;
 
           return (
-            <div key={size} className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
+            <div key={size} className={`flex items-center justify-between rounded-2xl border px-4 py-3 ${
+              isOutOfStock ? 'border-gray-200 bg-gray-50 opacity-60' : 'border-gray-200 bg-white'
+            }`}>
               <div>
-                <p className="text-sm font-semibold text-gray-900">{size}</p>
-                <p className="text-xs text-gray-500">{stockLabel(stock)}</p>
+                <p className={`text-sm font-semibold ${
+                  isOutOfStock ? 'text-gray-400' : 'text-gray-900'
+                }`}>{size}</p>
+                <p className={`text-xs ${
+                  isOutOfStock ? 'text-red-500' : 'text-gray-500'
+                }`}>{stockLabel(stock)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => updateQuantity(size, -1)}
-                  disabled={!canDecrement}
+                  disabled={!canDecrement || isOutOfStock}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-lg font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  −
+                  -
                 </button>
                 <span className="min-w-[2rem] text-center text-sm font-medium text-gray-900">{quantity}</span>
                 <button
                   type="button"
                   onClick={() => updateQuantity(size, 1)}
-                  disabled={!canIncrement}
+                  disabled={!canIncrement || isOutOfStock}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-lg font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   +
